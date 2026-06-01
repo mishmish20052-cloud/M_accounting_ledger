@@ -1,10 +1,7 @@
 name: Build Flutter APK
 
 on:
-  push:
-    paths:
-      - 'accounting_ledger/**'  # يتم التشغيل عند تغيير أي ملف في مجلد المشروع
-  workflow_dispatch:             # يسمح بالتشغيل اليدوي
+  workflow_dispatch:   # ستبدأ العملية يدويًا من تبويب 'Actions'
 
 jobs:
   build:
@@ -17,24 +14,29 @@ jobs:
       - name: 🐦 إعداد بيئة Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'   # يمكنك تغيير الإصدار حسب مشروعك
+          flutter-version: '3.22.0'
           channel: 'stable'
 
-      - name: 📂 الانتقال إلى مجلد المشروع
-        run: cd accounting_ledger
+      - name: 🧹 الخطوة 1: حذف مجلد Android القديم (سبب المشكلة)
+        run: rm -rf accounting_ledger/android
 
-      - name: 📦 تحميل حزم المشروع (pub get)
+      - name: ✨ الخطوة 2: إنشاء مجلد Android جديد وصالح
+        run: |
+          cd accounting_ledger
+          flutter create --platforms=android .
+
+      - name: 📦 الخطوة 3: تحميل وتثبيت dependencies المشروع
         run: |
           cd accounting_ledger
           flutter pub get
 
-      - name: 🔨 بناء APK للإصدار (release)
+      - name: 🔨 الخطوة 4: بناء ملف APK
         run: |
           cd accounting_ledger
           flutter build apk --release
 
-      - name: 📤 رفع ملف APK كقطعة (Artifact)
+      - name: 📤 الخطوة 5: رفع ملف APK كقطعة قابلة للتحميل
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
+          name: my-app-apk
           path: accounting_ledger/build/app/outputs/flutter-apk/app-release.apk
