@@ -1,0 +1,35 @@
+name: Extract ZIP on Push
+on:
+  push:
+    paths:
+      - '**.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: التحقق من الكود (Checkout)
+        uses: actions/checkout@v4
+
+      - name: تحديد اسم ملف ZIP
+        id: get_zip_name
+        run: |
+          zip_file=$(ls *.zip | head -n 1)
+          echo "ZIP_FILE=${zip_file}" >> "$GITHUB_OUTPUT"
+
+      - name: فك الضغط (Unzip)
+        run: |
+          unzip -o "${{ steps.get_zip_name.outputs.ZIP_FILE }}"
+          rm "${{ steps.get_zip_name.outputs.ZIP_FILE }}"
+
+      - name: رفع التغييرات إلى المستودع
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "فك الضغط التلقائي وحذف الملف المضغوط"
+          git push
