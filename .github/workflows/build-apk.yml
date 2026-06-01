@@ -1,0 +1,40 @@
+name: Build Flutter APK
+
+on:
+  push:
+    paths:
+      - 'accounting_ledger/**'  # يتم التشغيل عند تغيير أي ملف في مجلد المشروع
+  workflow_dispatch:             # يسمح بالتشغيل اليدوي
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 سحب الكود من المستودع
+        uses: actions/checkout@v4
+
+      - name: 🐦 إعداد بيئة Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'   # يمكنك تغيير الإصدار حسب مشروعك
+          channel: 'stable'
+
+      - name: 📂 الانتقال إلى مجلد المشروع
+        run: cd accounting_ledger
+
+      - name: 📦 تحميل حزم المشروع (pub get)
+        run: |
+          cd accounting_ledger
+          flutter pub get
+
+      - name: 🔨 بناء APK للإصدار (release)
+        run: |
+          cd accounting_ledger
+          flutter build apk --release
+
+      - name: 📤 رفع ملف APK كقطعة (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: accounting_ledger/build/app/outputs/flutter-apk/app-release.apk
