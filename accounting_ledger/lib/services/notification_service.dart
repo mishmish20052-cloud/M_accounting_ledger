@@ -1,4 +1,5 @@
 // lib/services/notification_service.dart
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import '../utils/constants.dart';
 
@@ -48,14 +49,29 @@ class NotificationService {
     await _plugin.show(id, title, body, details, payload: payload);
   }
 
-  static Future<void> scheduleRecurringNotification({
+  /// جدولة إشعار متكرر يومياً في وقت محدد (ساعة ودقيقة)
+  static Future<void> scheduleDailyRecurringNotification({
     required int id,
     required String title,
     required String body,
-    required Time scheduledTime,
-    required RepeatInterval repeatInterval,
+    required TimeOfDay scheduledTime,
   }) async {
     await initialize();
+
+    // حساب وقت البدء اليوم عند الساعة والدقيقة المطلوبتين
+    final now = DateTime.now();
+    var scheduledDateTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      scheduledTime.hour,
+      scheduledTime.minute,
+    );
+    // إذا كان الوقت المحدد قد مضى اليوم، نجدوله للغد
+    if (scheduledDateTime.isBefore(now)) {
+      scheduledDateTime = scheduledDateTime.add(const Duration(days: 1));
+    }
+
     const androidDetails = AndroidNotificationDetails(
       'accounting_ledger_recurring',
       'Recurring Reminders',
@@ -64,12 +80,18 @@ class NotificationService {
       priority: Priority.defaultPriority,
     );
     const details = NotificationDetails(android: androidDetails);
-    await _plugin.periodicallyShow(
+
+    // استخدام zonedschedule مع RepeatInterval.daily للإشعار المتكرر يومياً
+    await _plugin.zonedSchedule(
       id,
       title,
       body,
-      repeatInterval,
+      scheduledDateTime,
       details,
+      androidAllowWhileIdle: true,
+      matchDateTimeComponents: DateTimeComponents.time, // يعيد الجدولة كل يوم بنفس الوقت
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
 
