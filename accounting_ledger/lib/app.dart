@@ -4,8 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/settings_controller.dart';
-import 'controllers/account_controller.dart';
-import 'controllers/transaction_controller.dart';
 import 'utils/theme.dart';
 import 'views/screens/pin_screen.dart';
 import 'views/screens/dashboard_screen.dart';
@@ -22,7 +20,6 @@ class AccountingLedgerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
 
-    // إزالة DynamicColorBuilder بالكامل
     return MaterialApp(
       title: 'Accounting Ledger',
       debugShowCheckedModeBanner: false,
@@ -47,9 +44,63 @@ class AccountingLedgerApp extends ConsumerWidget {
           child: child!,
         );
       },
+      // استخدام _AppRouter الذي يعرف أدناه
       home: const _AppRouter(),
     );
   }
 }
 
-// ... باقي الكود (_AppRouter, MainShell, ...) يبقى كما هو دون أي تغيير ...
+// ----------------------------
+// مكون التوجيه البسيط
+// ----------------------------
+class _AppRouter extends StatefulWidget {
+  const _AppRouter();
+
+  @override
+  State<_AppRouter> createState() => _AppRouterState();
+}
+
+class _AppRouterState extends State<_AppRouter> {
+  int _currentIndex = 0;
+
+  // قائمة الشاشات الرئيسية (أسفل التبويبات)
+  final List<Widget> _screens = const [
+    DashboardScreen(),
+    AccountListScreen(),
+    ReportsScreen(),
+    SettingsScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _screens[_currentIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard),
+            label: 'Dashboard',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Accounts',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart),
+            label: 'Reports',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
+    );
+  }
+}
