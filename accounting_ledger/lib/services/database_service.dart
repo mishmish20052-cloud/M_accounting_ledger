@@ -1,5 +1,6 @@
 // lib/services/database_service.dart
 import 'package:sqflite/sqflite.dart' as sql;
+import 'package:sqflite/sqflite.dart' show getDatabasesPath; // ✅ إضافة هذا السطر
 import 'package:path/path.dart';
 import '../models/account.dart';
 import '../models/transaction.dart';
