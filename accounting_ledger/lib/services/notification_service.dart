@@ -1,6 +1,8 @@
 // lib/services/notification_service.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
 import '../utils/constants.dart';
 
 class NotificationService {
@@ -9,6 +11,12 @@ class NotificationService {
 
   static Future<void> initialize() async {
     if (_initialized) return;
+    
+    // تهيئة بيانات المناطق الزمنية
+    tz_data.initializeTimeZones();
+    // تعيين المنطقة الزمنية المحلية (يمكن تعديلها حسب الحاجة)
+    tz.setLocalLocation(tz.getLocation('Asia/Riyadh')); // أو أي منطقة زمنية مناسبة
+    
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -58,15 +66,17 @@ class NotificationService {
   }) async {
     await initialize();
 
-    // حساب وقت البدء اليوم عند الساعة والدقيقة المطلوبتين
-    final now = DateTime.now();
-    var scheduledDateTime = DateTime(
+    // الحصول على الوقت الحالي في المنطقة الزمنية المحلية
+    final now = tz.TZDateTime.now(tz.local);
+    var scheduledDateTime = tz.TZDateTime(
+      tz.local,
       now.year,
       now.month,
       now.day,
       scheduledTime.hour,
       scheduledTime.minute,
     );
+    
     // إذا كان الوقت المحدد قد مضى اليوم، نجدوله للغد
     if (scheduledDateTime.isBefore(now)) {
       scheduledDateTime = scheduledDateTime.add(const Duration(days: 1));
@@ -81,15 +91,14 @@ class NotificationService {
     );
     const details = NotificationDetails(android: androidDetails);
 
-    // استخدام zonedschedule مع RepeatInterval.daily للإشعار المتكرر يومياً
     await _plugin.zonedSchedule(
       id,
       title,
       body,
-      scheduledDateTime,
+      scheduledDateTime, // الآن من النوع TZDateTime
       details,
       androidAllowWhileIdle: true,
-      matchDateTimeComponents: DateTimeComponents.time, // يعيد الجدولة كل يوم بنفس الوقت
+      matchDateTimeComponents: DateTimeComponents.time,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
