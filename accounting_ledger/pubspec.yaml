@@ -28,7 +28,7 @@ dependencies:
   flutter_image_compress: ^2.1.0
   speech_to_text: ^6.6.0
   url_launcher: ^6.2.2
-  dynamic_color: ^1.6.9
+  dynamic_color: ^1.9.0          # ✅ تم الترقية من 1.6.9 إلى 1.9.0
   fl_chart: ^0.66.2
   collection: ^1.18.0
   uuid: ^4.2.1
