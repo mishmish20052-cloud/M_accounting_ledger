@@ -1,5 +1,5 @@
 // lib/services/database_service.dart
-import 'package:sqflite/sqflite.dart';
+import 'package:sqflite/sqflite.dart' as sql;
 import 'package:path/path.dart';
 import '../models/account.dart';
 import '../models/transaction.dart';
@@ -7,16 +7,16 @@ import '../models/installment.dart';
 import '../utils/constants.dart';
 
 class DatabaseService {
-  static Database? _db;
+  static sql.Database? _db;
 
-  static Future<Database> get database async {
+  static Future<sql.Database> get database async {
     _db ??= await _initDb();
     return _db!;
   }
 
-  static Future<Database> _initDb() async {
+  static Future<sql.Database> _initDb() async {
     final path = join(await getDatabasesPath(), AppConstants.dbName);
-    return openDatabase(
+    return await sql.openDatabase(
       path,
       version: AppConstants.dbVersion,
       onCreate: _onCreate,
@@ -24,7 +24,7 @@ class DatabaseService {
     );
   }
 
-  static Future<void> _onCreate(Database db, int version) async {
+  static Future<void> _onCreate(sql.Database db, int version) async {
     await db.execute('''
       CREATE TABLE ${AppConstants.accountsTable} (
         id TEXT PRIMARY KEY,
@@ -90,8 +90,7 @@ class DatabaseService {
     ''');
   }
 
-  static Future<void> _onUpgrade(
-      Database db, int oldVersion, int newVersion) async {
+  static Future<void> _onUpgrade(sql.Database db, int oldVersion, int newVersion) async {
     // Handle future migrations
   }
 
@@ -100,7 +99,7 @@ class DatabaseService {
   static Future<String> insertAccount(Account account) async {
     final db = await database;
     await db.insert(AppConstants.accountsTable, account.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+        conflictAlgorithm: sql.ConflictAlgorithm.replace);
     return account.id;
   }
 
@@ -126,8 +125,7 @@ class DatabaseService {
         where: 'id = ?', whereArgs: [account.id]);
   }
 
-  static Future<void> updateAccountBalance(
-      String id, double newBalance) async {
+  static Future<void> updateAccountBalance(String id, double newBalance) async {
     final db = await database;
     await db.update(
       AppConstants.accountsTable,
@@ -152,7 +150,7 @@ class DatabaseService {
   static Future<String> insertTransaction(Transaction transaction) async {
     final db = await database;
     await db.insert(AppConstants.transactionsTable, transaction.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+        conflictAlgorithm: sql.ConflictAlgorithm.replace);
     return transaction.id;
   }
 
@@ -185,8 +183,7 @@ class DatabaseService {
       args.add(type);
     }
 
-    final where =
-        conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
+    final where = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
     final limitClause = limit != null ? 'LIMIT $limit OFFSET $offset' : '';
 
     final maps = await db.rawQuery(
@@ -230,8 +227,7 @@ class DatabaseService {
       args.add(to.toIso8601String());
     }
 
-    final where =
-        conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
+    final where = conditions.isNotEmpty ? 'WHERE ${conditions.join(' AND ')}' : '';
 
     final result = await db.rawQuery('''
       SELECT 
@@ -283,12 +279,11 @@ class DatabaseService {
   static Future<String> insertInstallment(Installment inst) async {
     final db = await database;
     await db.insert(AppConstants.installmentsTable, inst.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+        conflictAlgorithm: sql.ConflictAlgorithm.replace);
     return inst.id;
   }
 
-  static Future<List<Installment>> getInstallments(
-      {bool activeOnly = true}) async {
+  static Future<List<Installment>> getInstallments({bool activeOnly = true}) async {
     final db = await database;
     final where = activeOnly ? 'WHERE is_completed = 0' : '';
     final maps = await db.rawQuery(
@@ -326,7 +321,7 @@ class DatabaseService {
 
   static Future<void> importAll(Map<String, dynamic> data) async {
     final db = await database;
-    await db.transaction((txn) async {
+    await db.transaction((sql.Transaction txn) async {
       await txn.delete(AppConstants.installmentsTable);
       await txn.delete(AppConstants.transactionsTable);
       await txn.delete(AppConstants.accountsTable);
@@ -334,19 +329,19 @@ class DatabaseService {
       final accounts = data['accounts'] as List<dynamic>;
       for (final a in accounts) {
         await txn.insert(AppConstants.accountsTable, Map<String, dynamic>.from(a as Map),
-            conflictAlgorithm: ConflictAlgorithm.replace);
+            conflictAlgorithm: sql.ConflictAlgorithm.replace);
       }
 
       final transactions = data['transactions'] as List<dynamic>;
       for (final t in transactions) {
         await txn.insert(AppConstants.transactionsTable, Map<String, dynamic>.from(t as Map),
-            conflictAlgorithm: ConflictAlgorithm.replace);
+            conflictAlgorithm: sql.ConflictAlgorithm.replace);
       }
 
       final installments = data['installments'] as List<dynamic>;
       for (final i in installments) {
         await txn.insert(AppConstants.installmentsTable, Map<String, dynamic>.from(i as Map),
-            conflictAlgorithm: ConflictAlgorithm.replace);
+            conflictAlgorithm: sql.ConflictAlgorithm.replace);
       }
     });
   }
